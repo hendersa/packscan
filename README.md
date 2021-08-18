@@ -1,4 +1,4 @@
-This is the source code and makefile to build the "PackScan" memory pack scanning tool (packscan). packscan is a command-line utility that performs basic parsing and forensics of data dumped from Super Famicom memory packs. It searches a dump to find content headers, determine which blocks of the pack's flash memory contain data, calculate CRCs on content data, and provide other useful information. 
+This project contains the source code and makefile to build the "PackScan" memory pack scanning tool (packscan). packscan is a command-line utility that performs basic parsing and forensics of data dumped from Super Famicom memory packs. It searches a dump to find content headers, determine which blocks of the pack's flash memory contain data, calculate CRCs on content data, and provide other useful information. 
 
 *** Building the Software ***
 
@@ -10,7 +10,7 @@ Most users will use packscan to generate a report like this:
 
 $ ./packscan [NAME OF DUMP FILE]
 
-For other options, run packscan with a "-h" option for help on other options:
+Run packscan with a "-h" for a list of other options:
 
 $ ./packscan -h
 
