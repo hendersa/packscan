@@ -17,20 +17,23 @@
 
 static void showVersion(void)
 {
+    std::cout << std::endl;
     std::cout << "PackScan: An SFC memory pack dump analyzer (v";
-    std::cout << VERSION << ")\n";
-    std::cout << "Written by Andrew Henderson (hendersa@icculus.org)\n";
-    std::cout << "Source available: https://www.beaglesatella.org\n\n";
+    std::cout << VERSION << ")" << std::endl;
+    std::cout << "Written by Andrew Henderson (hendersa@icculus.org)";
+    std::cout << std::endl;
+    std::cout << "Source available: https://www.beaglesatella.org";
+    std::cout << std::endl << std::endl;
 }
 
 static void showHelp(const char *programName) 
 {
-    std::cout << "Usage:\n\n  " << programName;
-    std::cout << " [options] [Memory pack dump filename]\n";
-    std::cout << "\nOptions:\n";
-    std::cout << "  -n   No color codes in report\n";
-    std::cout << "  -v   Display version\n";
-    std::cout << "  -h   Display this help\n";
+    std::cout << "Usage:" << std::endl << std::endl << "  " << programName;
+    std::cout << " [options] [Memory pack dump filename]" << std::endl;
+    std::cout << std::endl << "Options:" << std::endl;
+    std::cout << "  -n   No color codes in report" << std::endl;
+    std::cout << "  -v   Display version" << std::endl;
+    std::cout << "  -h   Display this help" << std::endl;
 }
 
 int main(int argc, char *argv[]) 
@@ -58,13 +61,6 @@ int main(int argc, char *argv[])
                 showHelp(argv[0]);
                 return 0;
 
-            case '?':
-                showVersion();
-		std::cout << "\nUnknown option: '";
-		std::cout << optopt << "'\n\n";
-                showHelp(argv[0]);
-                return 0;
-
             default:
                 break;		
         }
@@ -79,7 +75,7 @@ int main(int argc, char *argv[])
     {
         /* Filename wasn't specified */
         showVersion();
-	std::cout << "No memory pack file specified.\n\n";
+	std::cout << "No memory pack file specified." << std::endl << std::endl;
         showHelp(argv[0]);
         return 0;
     }

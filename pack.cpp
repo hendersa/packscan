@@ -8,12 +8,9 @@
  * use this source code in your own projects.
  ***************************************************************/
 
-#include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <fstream>
 #include <streambuf>
 #include <sstream>
@@ -36,17 +33,17 @@ Pack::Pack(const char *filename) :
         switch(errno) {
             case EACCES:
                 std::cout << "Unable to access file '" << filename;
-                std::cout << "': Access denied\n";
+                std::cout << "': Access denied" << std::endl;
 	        return;
 
 	    case ENOENT:
                 std::cout << "Unable to access file '" << filename;
-                std::cout << "': Path doesn't exist\n";
+                std::cout << "': Path doesn't exist" << std::endl;
 	        return;
 
             default:
                 std::cout << "Unable to access file '" << filename;
-                std::cout << "': Error opening file\n";
+                std::cout << "': Error opening file" << std::endl;
 	        return;
         } /* End case */
     } /* End if */
@@ -55,7 +52,7 @@ Pack::Pack(const char *filename) :
     if ((fileStat.st_mode & S_IFMT) != S_IFREG) 
     {
         std::cout << "Unable to access file '" << filename;
-        std::cout << "': Not a file\n";
+        std::cout << "': Not a file" << std::endl;
 	return;
     }
 
@@ -69,7 +66,7 @@ Pack::Pack(const char *filename) :
 
         default:
             std::cout <<"Dump '" << filename << "' is invalid size (";
-            std::cout << fileStat.st_size << " bytes)\n";
+            std::cout << fileStat.st_size << " bytes)" << std::endl;
 	    return;
     }
 
@@ -146,13 +143,6 @@ bool Pack::validHeader(const uint32_t block, const bool LoROM, Pack::Header_t *h
     for (i=0; i < 4; i++)
         header->programType[i] = mPackData[offset + i + 0x02];
 
-    /* Check for valid program type */
-    if ( (header->programType[0] != 0) ||
-        (header->programType[1] != 0) ||
-        (header->programType[3] != 0) ||
-        (header->programType[2] > 2) )
-        return false;
-
     /* Copy title */
     for (i=0; i < 16; i++)
         header->title[i] = mPackData[offset + i + 0x10];
@@ -170,6 +160,9 @@ bool Pack::validHeader(const uint32_t block, const bool LoROM, Pack::Header_t *h
             (header->blockAlloc[1] != 0) )
             /* Allocating blocks beyond an 8M datapack */
             return false;
+    } else {
+        if (header->blockAlloc[0] == 0)
+            return false;
     }
 
     /* Copy limited starts */
@@ -180,17 +173,30 @@ bool Pack::validHeader(const uint32_t block, const bool LoROM, Pack::Header_t *h
     header->dateMonth = mPackData[offset + 0x26];
     header->dateDay = mPackData[offset + 0x27];
 
+    /* Heuristic: If the date bytes are 0xFFFF, this header is invalid */
+    if ((header->dateMonth == 0xFF) && (header->dateDay == 0xFF))
+        return false;
+
     /* Copy map mode */
     header->speedMap = mPackData[offset + 0x28];
 
     /* Copy file type */
     header->fileType = mPackData[offset + 0x29];
 
+    /* Copy the fixed maker field (modified by BS-X on download) */
     header->maker = mPackData[offset + 0x2A];
 
     /* Check for valid version number */
-    if (mPackData[offset + 0x2A] != 0x33)
-        return false;
+    switch(mPackData[offset + 0x2A])
+    {
+        case 0x33: /* BS-X validated (BS-X changed this to 0x33) */
+        case 0xFF: /* Download data, not yet BS-X validated */ 
+        case 0x00: /* Deleted data */
+            break;
+
+        default:   /* Invalid, can't be a header */
+            return false;
+    }
 
     /* Copy version */
     header->version = mPackData[offset + 0x2B];
@@ -220,7 +226,7 @@ std::string Pack::generateReport(const bool color)
     /* If no memory pack is loaded, we're done */
     if (!mIsLoaded) 
     {
-        report << "No memory pack is loaded, exiting...\n";
+        report << "No memory pack is loaded, exiting..." << std::endl;
 	return report.str();
     }
 
@@ -234,24 +240,26 @@ std::string Pack::generateReport(const bool color)
     }
 
     report << colorLabel << "MEMORY PACK FILENAME: " << colorReset;
-    report << mFilename << "\n";
+    report << mFilename << std::endl;
     report << colorLabel << "MEMORY PACK SIZE:     " << colorReset;
-    report << mPackSize << " bytes\n";
+    report << mPackSize << " bytes" << std::endl;
 
     for(i=0; i < mBlockHeader.size(); i++) 
     {
-        report << std::dec << colorLabel << "\nHEADER #" << (i + 1);
+        report << std::endl;
+        report << std::dec << colorLabel << "HEADER #" << (i + 1);
         report << " (offset 0x" << std::uppercase << std::setfill('0');
         report << std::setw(5) << std::hex << (int)mBlockHeader[i].address;
-        report << "):\n" << std::dec << std::setw(1);
+        report << "):" << std::endl << std::dec << std::setw(1);
 
         report << "    TITLE:" << colorReset << "                [";
-        report << sjis2utf8((char *)mBlockHeader[i].title) << "]\n";
+        report << sjis2utf8((char *)mBlockHeader[i].title) << "]";
+        report << std::endl;
 
 	report << colorLabel << "    DATE:" << colorReset;
 	report << "                 ";
         report << (mBlockHeader[i].dateMonth >> 4) << "/";
-        report << (mBlockHeader[i].dateDay >> 3) << '\n';
+        report << (mBlockHeader[i].dateDay >> 3) << std::endl;
 
 	report << colorLabel << "    REPORTED CRC/INVERSE:" << colorReset;
         report << " 0x" << std::uppercase << std::setfill('0') << std::setw(4);
@@ -260,9 +268,10 @@ std::string Pack::generateReport(const bool color)
         report << std::uppercase << std::setfill('0') << std::setw(4);
         report << std::hex << (int)mBlockHeader[i].invChksum;
 	if ((mBlockHeader[i].chksum + mBlockHeader[i].invChksum) == 0xFFFF) 
-            report << colorGood << " [LOOKS OK!]\n";
+            report << colorGood << " [LOOKS OK!]";
 	else
-            report << colorBad << " [LOOKS BAD]\n";
+            report << colorBad << " [LOOKS BAD]";
+        report << std::endl;
 
 	report << colorLabel << "    CALCULATED CRC:" << colorReset;
 	report << "       0x";
@@ -273,45 +282,51 @@ std::string Pack::generateReport(const bool color)
             report << colorGood << " [MATCHES REPORTED]";
         else
             report << colorBad << " [DOES NOT MATCH REPORTED]";
-	report << "\n";
+	report << std::endl;
 
         report << colorLabel << "    BS-X MENU VISIBILITY: " << colorReset;
 	if ( ((mBlockHeader[i].chksum == 0) && 
             (mBlockHeader[i].invChksum == 0)) || 
             (mBlockHeader[i].maker != 0x33) ||
             (mBlockHeader[i].starts[1] == 0x80) )
-            report << "No" << colorBad << " [NOT SHOWN IN MENU]\n";
+            report << "No" << colorBad << " [NOT SHOWN IN MENU]";
 	else
-            report << "Yes" << colorGood << " [SHOWS IN MENU]\n";
+            report << "Yes" << colorGood << " [SHOWS IN MENU]";
+        report << std::endl;
 
 	report << std::dec << colorLabel << "    PROGRAM TYPE:";
         report << colorReset << "         ";
-	switch (mBlockHeader[i].programType[2]) {
-            case 0x00:
-                report << "65C816 code\n";
-                break;
+        if ( !mBlockHeader[i].programType[0] &&
+            !mBlockHeader[i].programType[1] &&
+            !mBlockHeader[i].programType[3] ) {
 
-            case 0x01:
-                report << "BS-X bytecode\n";
-                break;
+            switch (mBlockHeader[i].programType[2]) {
+                case 0x01:
+                    report << "BS-X bytecode";
+                    break;
 
-            case 0x02:
-                report << "SA-1 code\n";
-                break;
+                case 0x02:
+                    report << "SA-1 code";
+                    break;
 
-            default:
-                report << colorBad << "UNKNOWN\n";
-        } /* End switch */
+                default:
+                    report << "65C816 code";
+                    break;
+            } /* End switch */
+
+        } else
+            report << "65C816 code";
+        report << std::endl;
 
 	report << colorLabel << "    BOOTS REMAINING:";
         report << colorReset << "      ";
         if ( (mBlockHeader[i].starts[1]) & 0x80 )
         {
-            report << ( (mBlockHeader[i].starts[1] >> 2) & 0x1F ); 
-            report << "\n"; 
+            report << ( (mBlockHeader[i].starts[1] >> 2) & 0x1F );
         }
         else
-            report << "Unlimited\n";
+            report << "Unlimited";
+        report << std::endl;
 
         report << colorLabel << "    ROM MAPPING/SPEED:    " << colorReset;
         if ( mBlockHeader[i].speedMap & 1 )
@@ -320,9 +335,10 @@ std::string Pack::generateReport(const bool color)
             report << "LoROM,";
 
 	if ( (mBlockHeader[i].speedMap >> 4) > 2 )
-            report << "FastROM (120 ns)\n";
+            report << "FastROM (120 ns)";
         else
-            report << "SlowROM (200 ns)\n";
+            report << "SlowROM (200 ns)";
+        report << std::endl;
 
 	report << colorLabel << "    EXECUTION:            " << colorReset;
 	if (mBlockHeader[i].fileType & 0x20)
@@ -334,9 +350,10 @@ std::string Pack::generateReport(const bool color)
 	else
             report << "Soundlink UNMUTED,";
         if (mBlockHeader[i].fileType & 0x80)
-            report << "NO St. GIGA intro\n";
+            report << "NO St. GIGA intro";
         else
-            report << "St. GIGA intro\n";
+            report << "St. GIGA intro";
+        report << std::endl;
 
         report << colorLabel << "    BLOCK ALLOCATION:" << colorReset;
 	report << "     [";
@@ -344,7 +361,7 @@ std::string Pack::generateReport(const bool color)
         temp |= (mBlockHeader[i].blockAlloc[2] << 16);
 	temp |= (mBlockHeader[i].blockAlloc[1] << 8);
 	temp |= (mBlockHeader[i].blockAlloc[0] << 0);
-	for (x=0; x < (mPackSize / (128 * 1024)); x++)
+	for (x=0; x < (uint32_t)(mPackSize / (128 * 1024)); x++)
         {
             if ( (temp >> x) & 0x1 )
                 report << "X";
@@ -352,7 +369,7 @@ std::string Pack::generateReport(const bool color)
                 report << ".";
         } /* End for */
         
-       report << "]\n";	
+       report << "]" << std::endl;
     }
 
     return report.str();

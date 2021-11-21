@@ -25,7 +25,7 @@ public:
 
 private:
 
-    std::string mPackData;
+    std::vector<uint8_t> mPackData;
     std::string mFilename;
     bool mIsLoaded;
 

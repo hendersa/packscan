@@ -77,7 +77,7 @@ char* sjis2utf8(char* input)
     // Simplify the input and decode standard ASCII characters
     sjis2ascii(input);
 
-    int len = strlen(input);
+    size_t len = strlen(input);
     char* output = (char *)malloc(3 * len); //ShiftJis won't give 4byte UTF8, so max. 3 byte per input char are needed
     size_t indexInput = 0, indexOutput = 0;
 

@@ -1,0 +1,15 @@
+CHANGELOG for packscan:
+
+2021-08-18 (v0.1)
+
+- Initial release
+
+2021-11-21 (v0.2)
+
+- Changed the four-byte "program type" check when parsing potential headers. The check is now 0x00000100 for BS-X bytecode (used only by BS-X), 0x00000200 for SA-1 code (used only by Itoi Shigesato no Bass Tsuri No. 1), and 65C816 code for everything else. Thanks to LuigiBlood for the clarification.
+- Fixed option parsing.
+- Replaced those '\n' EOLs with std::endl.
+- Added check to discard a potential header if it has no blocks allocated.
+- Changed the main data buffer from std::string to std::vector<uint8_t>.
+- Added "-Wall -Werror -pedantic" to CXXFLAGS in the Makefile and cleaned up evertyhing being reported.
+
